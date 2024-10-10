@@ -34,6 +34,10 @@ class DiscordBot(commands.Bot):
         print("Ready")
 
     @override
+    async def setup_hook(self) -> None:
+        self.check_rp.start()
+
+    @override
     async def start(self, token: str, username: str, password: str) -> None:
         await asyncio.gather(
             super().start(token),
