@@ -1,0 +1,2 @@
+discord.py[speed]
+steamio @ git+https://github.com/Gobot1234/steam.py@fix-connection-issues
