@@ -23,11 +23,16 @@ log.setLevel(logging.DEBUG)
 class DiscordBot(commands.Bot):
     def __init__(self) -> None:
         super().__init__(
-            command_prefix=commands.when_mentioned_or("!"),
+            command_prefix=commands.when_mentioned,
             intents=discord.Intents.default(),
             description="A simple bot that can get steam user info",
+            activity=discord.Streaming(
+                name="\N{YELLOW HEART} say hi @me",
+                url="https://www.twitch.tv/irene_adler__",
+            ),
         )
         self.steam = steam.Client()  # attach a steam.Client instance to the bot
+        self.check_rp.start()
 
     async def on_ready(self) -> None:
         await self.steam.wait_until_ready()
@@ -35,7 +40,7 @@ class DiscordBot(commands.Bot):
 
     @override
     async def setup_hook(self) -> None:
-        self.check_rp.start()
+        pass
 
     @override
     async def start(self, token: str, username: str, password: str) -> None:
@@ -53,11 +58,8 @@ class DiscordBot(commands.Bot):
     async def check_rp(self) -> None:
         log.debug("Checking Rich Presence")
         user = self.steam.get_user(config.IRENE_ID64)
-        if user:
-            print(user.rich_presence)
-
-        if self.check_rp.current_loop == 2:
-            await self.tree.sync()
+        if user and (rp := user.rich_presence):
+            log.debug("Irene's RP status = %s", rp.get("status"))
 
     @check_rp.before_loop
     async def check_rp_before_loop(self) -> None:
@@ -87,6 +89,17 @@ async def user(interaction: discord.Interaction[DiscordBot]) -> None:
     embed.add_field(name="Friends:", value=len(await user.friends()))
     embed.add_field(name="Apps:", value=len(await user.apps()))
     await interaction.response.send_message(f"Info on {user.name}", embed=embed)
+
+
+@bot.command(aliases=["ping", "hello"])
+async def hi(ctx: commands.Context[DiscordBot]) -> None:
+    await ctx.send("Hello!")
+
+
+@bot.command()
+async def sync(ctx: commands.Context[DiscordBot]) -> None:
+    await ctx.bot.tree.sync()
+    await ctx.send("Sync is done.")
 
 
 async def main() -> None:
