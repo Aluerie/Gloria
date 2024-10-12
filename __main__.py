@@ -35,14 +35,12 @@ class DiscordBot(commands.Bot):
         self.steam = steam.Client()  # attach a steam.Client instance to the bot
 
     async def on_ready(self) -> None:
-        await self.steam.wait_until_ready()
-        print("Ready")
+        channel: discord.TextChannel = self.get_channel(1294463775071535155)  # type: ignore
+        await channel.send("Hey, I'm reloaded.")
 
     @override
     async def setup_hook(self) -> None:
-        print("hi")
         self.check_rp.start()
-        print("wtf")
 
     @override
     async def start(self, token: str, username: str, password: str) -> None:
