@@ -30,6 +30,7 @@ class DiscordBot(commands.Bot):
                 name="\N{YELLOW HEART} say hi @me",
                 url="https://www.twitch.tv/irene_adler__",
             ),
+            allowed_mentions=discord.AllowedMentions(roles=True, replied_user=False, everyone=False),
         )
         self.steam = steam.Client()  # attach a steam.Client instance to the bot
 
@@ -85,17 +86,21 @@ class UserNotFound(commands.BadArgument):
 bot = DiscordBot()
 
 
-@bot.tree.command()
-async def user(interaction: discord.Interaction[DiscordBot]) -> None:
+@bot.hybrid_command()
+async def user(ctx: commands.Context[DiscordBot]) -> None:
     """Show some basic info on a steam user"""
-    user = await interaction.client.steam.fetch_user(config.IRENE_ID64)
+    user = ctx.bot.steam.get_user(config.IRENE_ID64)
+    if user is None:
+        await ctx.reply("Irene is None :c")
+        return
+
     embed = discord.Embed(description=user.name)
     embed.set_thumbnail(url=user.avatar.url)
     embed.add_field(name="64 bit ID:", value=str(user.id64))
     embed.add_field(name="Currently playing:", value=f"{user.app or 'Nothing'}")
-    embed.add_field(name="Friends:", value=len(await user.friends()))
+    # embed.add_field(name="Friends:", value=len(await user.friends()))
     embed.add_field(name="Apps:", value=len(await user.apps()))
-    await interaction.response.send_message(f"Info on {user.name}", embed=embed)
+    await ctx.reply(f"Info on {user.name}", embed=embed)
 
 
 @bot.command(aliases=["ping", "hello"])
