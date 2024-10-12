@@ -17,7 +17,7 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 
 
 class DiscordBot(commands.Bot):
@@ -32,7 +32,6 @@ class DiscordBot(commands.Bot):
             ),
         )
         self.steam = steam.Client()  # attach a steam.Client instance to the bot
-        self.check_rp.start()
 
     async def on_ready(self) -> None:
         await self.steam.wait_until_ready()
@@ -40,7 +39,9 @@ class DiscordBot(commands.Bot):
 
     @override
     async def setup_hook(self) -> None:
-        pass
+        print("hi")
+        self.check_rp.start()
+        print("wtf")
 
     @override
     async def start(self, token: str, username: str, password: str) -> None:
@@ -56,15 +57,21 @@ class DiscordBot(commands.Bot):
 
     @tasks.loop(minutes=10)
     async def check_rp(self) -> None:
-        log.debug("Checking Rich Presence")
+        log.info("Checking Rich Presence")
         user = self.steam.get_user(config.IRENE_ID64)
-        if user and (rp := user.rich_presence):
-            log.debug("Irene's RP status = %s", rp.get("status"))
+
+        if not user:
+            log.info("No user in cache")
+        elif rp := user.rich_presence:
+            log.info("Irene's RP status = %s", rp.get("status"))
+        else:
+            log.info("Irene's RP is None")
 
     @check_rp.before_loop
     async def check_rp_before_loop(self) -> None:
-        await self.wait_until_ready()
-        await self.steam.wait_until_ready()
+        # await self.wait_until_ready()
+        # await self.steam.wait_until_ready() # bugged - NEVER HAPPENS
+        pass
 
 
 class UserNotFound(commands.BadArgument):
