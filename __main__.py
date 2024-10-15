@@ -6,8 +6,10 @@ import sys
 from typing import override
 
 import discord
-import steam
 from discord.ext import commands, tasks
+
+# from steam import Client
+from steam.ext.dota2 import Client
 
 import config
 from logs import setup_logging
@@ -17,7 +19,9 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
+
+CHANNEL_ID = 1294463775071535155
 
 
 class DiscordBot(commands.Bot):
@@ -32,11 +36,14 @@ class DiscordBot(commands.Bot):
             ),
             allowed_mentions=discord.AllowedMentions(roles=True, replied_user=False, everyone=False),
         )
-        self.steam = steam.Client()  # attach a steam.Client instance to the bot
+        self.dota = Client()  # attach a steam.Client instance to the bot
+
+    @discord.utils.cached_property
+    def glory_channel(self) -> discord.TextChannel:
+        return self.get_channel(CHANNEL_ID)  # pyright: ignore[reportReturnType]  # known channel ID
 
     async def on_ready(self) -> None:
-        channel: discord.TextChannel = self.get_channel(1294463775071535155)  # type: ignore
-        await channel.send("Hey, I'm reloaded.")
+        await self.glory_channel.send("Hey, I'm reloaded.")
 
     @override
     async def setup_hook(self) -> None:
@@ -46,31 +53,44 @@ class DiscordBot(commands.Bot):
     async def start(self, token: str, username: str, password: str) -> None:
         await asyncio.gather(
             super().start(token),
-            self.steam.login(username, password),
+            self.dota.login(username, password),
         )  # start the client and bot concurrently
 
     @override
     async def close(self) -> None:
-        await self.steam.close()  # make sure to close the client when we close the discord bot
+        await self.dota.close()  # make sure to close the client when we close the discord bot
         await super().close()
+
+    # @tasks.loop(minutes=10)
+    # async def check_rp(self) -> None:
+    #     log.info("Checking Rich Presence")
+    #     user = self.dota.get_user(config.IRENE_ID64)
+
+    #     if not user:
+    #         log.info("No user in cache")
+    #     elif rp := user.rich_presence:
+    #         log.info("Irene's RP status = %s", rp.get("status"))
+    #     else:
+    #         log.info("Irene's RP is None")
 
     @tasks.loop(minutes=10)
     async def check_rp(self) -> None:
-        log.info("Checking Rich Presence")
-        user = self.steam.get_user(config.IRENE_ID64)
-
-        if not user:
-            log.info("No user in cache")
-        elif rp := user.rich_presence:
-            log.info("Irene's RP status = %s", rp.get("status"))
-        else:
-            log.info("Irene's RP is None")
+        log.info("Checking TopSourceGames")
+        live_matches = await self.dota.top_live_matches()
+        msg = f"Received {len(live_matches)} live matches"
+        log.info(msg)
+        await self.glory_channel.send(msg)
 
     @check_rp.before_loop
     async def check_rp_before_loop(self) -> None:
-        # await self.wait_until_ready()
-        # await self.steam.wait_until_ready() # bugged - NEVER HAPPENS
-        pass
+        await self.wait_until_ready()
+        # await self.dota.wait_until_ready()
+        # print("Steam Client is ready")
+        await self.dota.wait_until_gc_ready()
+
+    @check_rp.error
+    async def send_error(self, exc: BaseException) -> None:
+        await self.glory_channel.send(str(exc))
 
 
 class UserNotFound(commands.BadArgument):
@@ -87,7 +107,7 @@ bot = DiscordBot()
 @bot.hybrid_command()
 async def user(ctx: commands.Context[DiscordBot]) -> None:
     """Show some basic info on a steam user"""
-    user = ctx.bot.steam.get_user(config.IRENE_ID64)
+    user = ctx.bot.dota.get_user(config.IRENE_ID64)
     if user is None:
         await ctx.reply("Irene is None :c")
         return
