@@ -16,7 +16,7 @@ log.setLevel(logging.DEBUG)
 
 
 class UserNotFound(commands.BadArgument):
-    """For when a matching user cannot be found"""
+    """For when a matching user cannot be found."""
 
     def __init__(self, argument: str) -> None:
         self.argument = argument
@@ -74,6 +74,7 @@ class TestSteamCog(commands.Cog):
 
     @check_rp.error
     async def send_error(self, exc: BaseException) -> None:
+        log.error("Error in `send_error`: %s", exc, exc_info=exc)
         await self.bot.glory_channel.send(f"{config.ERROR_PING}\n```py\n{exc}```")
 
 
