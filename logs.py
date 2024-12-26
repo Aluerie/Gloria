@@ -44,10 +44,10 @@ def setup_logging() -> Generator[Any, Any, Any]:
 
         # File Handler
         file_handler = RotatingFileHandler(
-            filename=".steam.log",
+            filename=".gloria.log",
             encoding="utf-8",
             mode="w",
-            maxBytes=9 * 1024 * 1024,  # 9 MiB
+            maxBytes=24 * 1024 * 1024,  # MiB
             backupCount=5,  # Rotate through 5 files
         )
         file_handler.setFormatter(fmt)

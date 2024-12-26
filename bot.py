@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, override
+import sys
+from typing import TYPE_CHECKING, Any, override
 
 import discord
 from discord.ext import commands
@@ -56,3 +57,14 @@ class GloriaBot(commands.Bot):
     async def close(self) -> None:
         await self.dota.close()  # make sure to close the client when we close the discord bot
         await super().close()
+
+    @override
+    async def on_error(self: GloriaBot, event: str, *args: Any, **kwargs: Any) -> None:
+        (_exception_type, exc, _traceback) = sys.exc_info()
+        log.error("`bot.on_error`: %s", exc, exc_info=exc)
+        await self.glory_channel.send(f"{config.ERROR_PING} `bot.on_error`\n```py\n{exc}```")
+
+    @override
+    async def on_command_error(self, ctx: commands.Context[GloriaBot], exc: commands.CommandError) -> None:
+        log.error("`bot.on_error`: %s", exc, exc_info=exc)
+        await ctx.send(f"{config.ERROR_PING} `bot.on_error`\n```py\n{exc}```")
