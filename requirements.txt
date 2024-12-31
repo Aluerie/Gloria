@@ -1,6 +1,5 @@
 discord.py[speed]
-# steamio @ git+https://github.com/Gobot1234/steam.py@fix-connection-issues
-steamio @ git+https://github.com/Aluerie/steam.py@test_reconnect_with_dota
+steamio @ git+https://github.com/Aluerie/steam.py@introduce-ext.dota2
 asyncpg
 asyncpg-stubs
 # steamio @ git+https://github.com/Gobot1234/steam.py
