@@ -1,0 +1,16 @@
+; /etc/systemd/system/gloria.service
+
+[Unit]
+Description=mybot
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/Gloria/
+ExecStart=/home/ubuntu/Gloria/venv/bin/python3.12 __main__.py
+User=ubuntu
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
